@@ -106,4 +106,4 @@ Made by **Bowen**, a game artist with ten years in the industry, who restores 3D
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Bundles [three.js](https://threejs.org/) r169 (MIT) in `vendor/three`, so the app works without any CDN.
