@@ -146,6 +146,8 @@ aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-
 .drop .priv{margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--faint)}
 body.dragging .drop{display:grid!important;background:rgba(13,11,9,.75);z-index:5}
 body.dragging .drop .box{border-color:var(--ember);transform:scale(1.02)}
+.sample-tip{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);width:min(92%,560px);padding:8px 14px;border-radius:10px;background:rgba(230,72,15,.92);color:#fff;font-size:13px;line-height:1.6;text-align:center;z-index:4;display:none;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.sample-tip.on{display:block}
 .loading{position:absolute;inset:0;display:none;place-items:center;background:rgba(13,11,9,.6);font-family:var(--mono);font-size:12px;color:var(--muted);z-index:6}
 .loading.on{display:grid}
 
@@ -230,6 +232,7 @@ body.dragging .drop .box{border-color:var(--ember);transform:scale(1.02)}
       </div>
     </div>
     <div class="loading" id="loading">解析中…</div>
+    <div class="sample-tip" id="sampleTip"></div>
   </div>
 </main>
 
@@ -237,8 +240,8 @@ body.dragging .drop .box{border-color:var(--ember);transform:scale(1.02)}
 
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
 } }
 </script>
 <script type="module">
@@ -902,7 +905,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.NeutralToneMapping;
 view.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x14110d);
+scene.background = new THREE.Color(0x2a241e); // 比界面底色亮一档：发黑的模型也能看清轮廓
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(3, 5, 4); scene.add(sun);
@@ -1096,6 +1099,7 @@ async function loadFiles(fileList) {
 async function loadBuffer(ab, name, size, files = new Map(), opts = {}) {
   cleanup();
   state.fixInfo = opts.fixInfo || null;
+  $('#sampleTip')?.classList.remove('on');
   state.fileName = name; state.fileSize = size;
   let container;
   try { container = parseContainer(ab); }
@@ -1120,7 +1124,7 @@ async function loadBuffer(ab, name, size, files = new Map(), opts = {}) {
     return blobUrls.get(baseName(url)) || url;
   });
   const loader = new GLTFLoader(manager);
-  loader.setDRACOLoader(new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/draco/gltf/'));
+  loader.setDRACOLoader(new DRACOLoader().setDecoderPath('vendor/three/examples/jsm/libs/draco/gltf/'));
   loader.setMeshoptDecoder(MeshoptDecoder);
   try {
     const gltf = await loader.parseAsync(ab, '');
@@ -1390,6 +1394,8 @@ async function loadSample(name) {
     if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
     const ab = await res.arrayBuffer();
     await loadBuffer(ab, name, ab.byteLength);
+    const tip = $('#sampleTip');
+    if (name === 'broken.glb') { tip.textContent = '这是故意做坏的样本：模型发黑、少了一块，都是体检列出的问题造成的。点“修复并重新体检”看修好的样子。'; tip.classList.add('on'); tip.onclick = () => tip.classList.remove('on'); }
   } catch (e) { alert('样本加载失败：' + e.message); }
   finally { $('#loading').classList.remove('on'); }
 }

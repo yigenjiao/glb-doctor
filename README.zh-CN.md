@@ -105,4 +105,4 @@ python -m http.server 8000      # 或者：npx serve .
 
 ## 许可证
 
-[MIT](LICENSE)
+[MIT](LICENSE)。仓库内置了 [three.js](https://threejs.org/) r169（MIT 许可证，位于 `vendor/three`），不依赖任何 CDN，国内网络也能打开。
