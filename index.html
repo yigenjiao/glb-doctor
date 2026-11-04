@@ -146,6 +146,9 @@ aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-
 .drop .priv{margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--faint)}
 body.dragging .drop{display:grid!important;background:rgba(13,11,9,.75);z-index:5}
 body.dragging .drop .box{border-color:var(--ember);transform:scale(1.02)}
+.boot-err{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(90%,480px);padding:16px 18px;border-radius:12px;background:#2a1410;border:1px solid var(--err);color:var(--text);font-size:13px;line-height:1.7;z-index:7;display:none}
+.boot-err b{display:block;font-size:15px;color:var(--err);margin-bottom:4px}
+.boot-err small{display:block;margin-top:8px;color:var(--faint);font-family:var(--mono);font-size:10.5px;word-break:break-all}
 .sample-tip{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);width:min(92%,560px);padding:8px 14px;border-radius:10px;background:rgba(230,72,15,.92);color:#fff;font-size:13px;line-height:1.6;text-align:center;z-index:4;display:none;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.4)}
 .sample-tip.on{display:block}
 .loading{position:absolute;inset:0;display:none;place-items:center;background:rgba(13,11,9,.6);font-family:var(--mono);font-size:12px;color:var(--muted);z-index:6}
@@ -233,25 +236,38 @@ body.dragging .drop .box{border-color:var(--ember);transform:scale(1.02)}
     </div>
     <div class="loading" id="loading">解析中…</div>
     <div class="sample-tip" id="sampleTip"></div>
+    <div class="boot-err" id="bootErr"></div>
   </div>
 </main>
 
 <div class="zoom" id="zoom"><img alt=""><div></div></div>
 
-<script type="importmap">
-{ "imports": {
-  "three": "./vendor/three/build/three.module.min.js",
-  "three/addons/": "./vendor/three/examples/jsm/"
-} }
+<script>
+(function () {
+  function show(msg) {
+    var el = document.getElementById('bootErr'); if (!el) return;
+    el.innerHTML = '<b>3D 引擎没能启动</b>' + msg + '<small>请把这一屏截图发给作者 · ' + navigator.userAgent.replace(/</g, '') + '</small>';
+    el.style.display = 'block';
+  }
+  window.__bootShow = show;
+  window.addEventListener('error', function (e) {
+    var el = document.getElementById('bootErr');
+    if (!window.__inspector && el && el.style.display !== 'block') show('<p>错误信息：' + String(e.message || e.type).replace(/</g, '') + '</p>');
+  });
+  setTimeout(function () {
+    if (!window.__inspector) show('<p>页面脚本没有运行起来。常见原因：在微信等 App 里直接打开（请点右上角「…」选择「在浏览器中打开」），或者系统浏览器版本太旧；网络慢时也可以稍等后刷新。</p>');
+  }, 15000);
+})();
 </script>
+<script nomodule>window.__bootShow && window.__bootShow('<p>这个浏览器太旧，不支持现代网页脚本。请换用新版 Chrome、Edge 或 Safari 打开。</p>');</script>
 <script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
+import * as THREE from './vendor/three/build/three.module.min.js';
+import { OrbitControls } from './vendor/three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from './vendor/three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from './vendor/three/examples/jsm/loaders/DRACOLoader.js';
+import { MeshoptDecoder } from './vendor/three/examples/jsm/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from './vendor/three/examples/jsm/environments/RoomEnvironment.js';
+import { VertexNormalsHelper } from './vendor/three/examples/jsm/helpers/VertexNormalsHelper.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -900,7 +916,9 @@ function applyFixes(selected) {
  *  4. three.js 视口
  * ===================================================================== */
 const view = $('#view');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ antialias: true }); }
+catch (e) { window.__bootShow?.('<p>这个浏览器无法使用 WebGL（3D 绘图功能），可能被关闭了，或者显卡驱动不支持。请换一个浏览器试试。</p>'); throw e; }
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.NeutralToneMapping;
 view.appendChild(renderer.domElement);
